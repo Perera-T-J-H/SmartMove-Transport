@@ -1,0 +1,36 @@
+/* Custom smooth scroll behaviour for the whole store */
+html, body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  overflow-x: hidden; /* Prevents awkward horizontal shifting layouts */
+  background-color: #ffffff;
+}
+
+/* Footer Link Interactive Glow Styling */
+.text-hover-white {
+  transition: color 0.25s ease-in-out;
+}
+
+.text-hover-white:hover {
+  color: #ffffff !important;
+  text-decoration: underline !important;
+}
+
+/* Customizing Carousel Navigation Arrow Indicators */
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+  background-color: rgba(197, 141, 94, 0.7); /* Matching your brand color: #c58d5e */
+  padding: 20px;
+  border-radius: 50%;
+}
+
+/* Navbar active link highlighting setup */
+.nav-link {
+  transition: color 0.2s ease-in-out;
+}
+
+.nav-link:hover {
+  color: #c58d5e !important; /* Highlights links with your brand color when hovered */
+}
