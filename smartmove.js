@@ -65,3 +65,39 @@ db.trip_media.insertMany([
     uploadedBy: "Nuwan Silva", uploadedAt: "2026-10-01" }
 ])
 
+
+// ----------  Count documents ----------
+db.reviews.countDocuments()                       
+db.announcements.countDocuments()                 
+db.vehicle_media.countDocuments()                 
+db.trip_media.countDocuments()                    
+db.reviews.countDocuments({ rating: 5 })          
+db.reviews.countDocuments({ rating: { $gt: 3 } }) 
+db.reviews.countDocuments({ routeId: 1 })         
+
+// ----------  Find ----------
+db.reviews.find()                                 
+db.reviews.findOne({ passengerName: "Nimal Perera" })   
+db.reviews.find({ routeId: 1 })                   
+db.reviews.find({ driverName: "Nuwan Silva" })
+
+// projection:
+db.reviews.find({ routeId: 1 }, { passengerName: 1, rating: 1, comment: 1, _id: 0 })
+
+// sort:
+db.reviews.find({}, { passengerName: 1, rating: 1, _id: 0 }).sort({ rating: 1 })   
+db.reviews.find({}, { passengerName: 1, rating: 1, _id: 0 }).sort({ rating: -1 })   
+db.reviews.find().sort({ submitDate: -1 }).limit(3)                                 
+
+
+// ---------- Query operators ---------- 
+db.reviews.find({ rating: { $gt: 3 } })
+db.reviews.find({ rating: { $gte: 3, $lte: 4 } })             
+            
+
+// logical: $and, $or
+db.reviews.find({ $and: [ { routeId: 2 }, { rating: { $gte: 4 } } ] })
+
+
+// $exists
+db.reviews.find({ photos: { $exists: true } })
