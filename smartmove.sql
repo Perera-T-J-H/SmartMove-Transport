@@ -1,150 +1,121 @@
 CREATE TABLE route (
-    rout_id      NUMBER GENERATED ALWAYS AS IDENTITY,
-    origin       VARCHAR2(50) NOT NULL,
-    destination  VARCHAR2(50) NOT NULL,
-    distance_km  NUMBER(6),
-    CONSTRAINT route_pk PRIMARY KEY (rout_id)
+rout_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+origin VARCHAR2(50) NOT NULL,
+destination VARCHAR2(50) NOT NULL,
+distance_km NUMBER(6,2)
 );
 
 CREATE TABLE vehicle (
-    vehicle_id        NUMBER GENERATED ALWAYS AS IDENTITY,
-    registration_num  VARCHAR2(20) NOT NULL,
-    vehicle_type      VARCHAR2(10) NOT NULL,
-    manu_year         NUMBER(4),
-    model             VARCHAR2(30),
-    status            VARCHAR2(20) DEFAULT 'Active',
-    capacity          NUMBER(3) NOT NULL,
-    fuel_type         VARCHAR2(20),
-    ac_type           VARCHAR2(20),
-    route_type        VARCHAR2(30),
-    CONSTRAINT vehicle_pk      PRIMARY KEY (vehicle_id),
-    CONSTRAINT vehicle_reg_uk  UNIQUE (registration_num),
-    CONSTRAINT vehicle_type_ck CHECK (vehicle_type IN ('VAN', 'BUS'))
+vehicle_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+registration_num VARCHAR2(20) NOT NULL UNIQUE,
+vehicle_type VARCHAR2(10) NOT NULL CHECK (vehicle_type IN ('VAN' , 'BUS')),
+manu_year NUMBER(4),
+model VARCHAR2(30),
+status VARCHAR2(20) DEFAULT 'Active',
+capacity NUMBER(3) NOT NULL,
+fuel_type VARCHAR2(20),
+ac_type VARCHAR2(20),
+route_type VARCHAR2(30)
+);
+
+DROP TABLE route;
+
+CREATE TABLE route (
+rout_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+origin VARCHAR2(50) NOT NULL,
+destination VARCHAR2(50) NOT NULL,
+distance_km NUMBER(6)
 );
 
 CREATE TABLE passenger (
-    passenger_id       NUMBER GENERATED ALWAYS AS IDENTITY,
-    first_name         VARCHAR2(50) NOT NULL,
-    last_name          VARCHAR2(50) NOT NULL,
-    email              VARCHAR2(100) NOT NULL,
-    password           VARCHAR2(100) NOT NULL,
-    registration_date  DATE DEFAULT SYSDATE,
-    CONSTRAINT passenger_pk       PRIMARY KEY (passenger_id),
-    CONSTRAINT passenger_email_uk UNIQUE (email)
+passenger_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+first_name VARCHAR2(50) NOT NULL,
+last_name VARCHAR2(50) NOT NULL,
+email VARCHAR2(100) NOT NULL UNIQUE,
+password VARCHAR2(100) NOT NULL, -- used only for login
+registration_date DATE DEFAULT SYSDATE
 );
 
 CREATE TABLE passenger_contact (
-    passenger_id    NUMBER NOT NULL,
-    contact_number  VARCHAR2(30),
-    CONSTRAINT passenger_contact_pk PRIMARY KEY (passenger_id, contact_number),
-    CONSTRAINT passenger_contact_fk FOREIGN KEY (passenger_id) REFERENCES passenger (passenger_id)
+passenger_id NUMBER NOT NULL REFERENCES passenger(passenger_id),
+contact_number VARCHAR2(30),
+PRIMARY KEY (passenger_id, contact_number)
 );
 
 CREATE TABLE employee (
-    employee_id  NUMBER GENERATED ALWAYS AS IDENTITY,
-    first_name   VARCHAR2(50) NOT NULL,
-    last_name    VARCHAR2(50) NOT NULL,
-    emp_role     VARCHAR2(10) NOT NULL,
-    status       VARCHAR2(20) DEFAULT 'Active',
-    hire_date    DATE DEFAULT SYSDATE,
-    email        VARCHAR2(100),
-    password     VARCHAR2(100),
-    CONSTRAINT employee_pk       PRIMARY KEY (employee_id),
-    CONSTRAINT employee_email_uk UNIQUE (email),
-    CONSTRAINT employee_role_ck  CHECK (emp_role IN ('ADMIN', 'DRIVER', 'MECHANIC')),
-    CONSTRAINT employee_status_ck CHECK (status IN ('Active', 'Inactive'))
+employee_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+first_name VARCHAR2(50) NOT NULL,
+last_name VARCHAR2(50) NOT NULL,
+emp_role VARCHAR2(10) NOT NULL CHECK (emp_role IN ('ADMIN' , 'DRIVER' , 'MECHANIC')),
+status VARCHAR2(20) DEFAULT 'Active' CHECK (status IN ('Active' , 'Inactive')),
+hire_date DATE DEFAULT SYSDATE,
+email VARCHAR2(100) UNIQUE, -- used only for login
+password VARCHAR2(100) -- used only for login
 );
 
 CREATE TABLE driver (
-    employee_id  NUMBER,
-    license_num  VARCHAR2(20) NOT NULL,
-    CONSTRAINT driver_pk         PRIMARY KEY (employee_id),
-    CONSTRAINT driver_license_uk UNIQUE (license_num),
-    CONSTRAINT driver_employee_fk FOREIGN KEY (employee_id) REFERENCES employee (employee_id)
+employee_id NUMBER PRIMARY KEY REFERENCES employee(employee_id),
+license_num VARCHAR2(20) NOT NULL UNIQUE
 );
 
 CREATE TABLE mechanic (
-    employee_id     NUMBER,
-    expertise_area  VARCHAR2(100),
-    CONSTRAINT mechanic_pk          PRIMARY KEY (employee_id),
-    CONSTRAINT mechanic_employee_fk FOREIGN KEY (employee_id) REFERENCES employee (employee_id)
+employee_id NUMBER PRIMARY KEY REFERENCES employee(employee_id),
+expertise_area VARCHAR2(100)
 );
 
 CREATE TABLE employee_contact (
-    employee_id     NUMBER NOT NULL,
-    contact_number  VARCHAR2(30),
-    CONSTRAINT employee_contact_pk PRIMARY KEY (employee_id, contact_number),
-    CONSTRAINT employee_contact_fk FOREIGN KEY (employee_id) REFERENCES employee (employee_id)
+employee_id NUMBER NOT NULL REFERENCES employee(employee_id),
+contact_number VARCHAR2(30),
+PRIMARY KEY (employee_id, contact_number)
 );
 
 CREATE TABLE trip (
-    trip_id           NUMBER GENERATED ALWAYS AS IDENTITY,
-    base_price        NUMBER(8,2) NOT NULL,
-    depa_datetime     TIMESTAMP NOT NULL,
-    arrival_datetime  TIMESTAMP,
-    status            VARCHAR2(20) DEFAULT 'Scheduled',
-    route_id          NUMBER NOT NULL,
-    vehicle_id        NUMBER NOT NULL,
-    driver_id         NUMBER NOT NULL,
-    CONSTRAINT trip_pk         PRIMARY KEY (trip_id),
-    CONSTRAINT trip_status_ck  CHECK (status IN ('Scheduled', 'Completed', 'Cancelled')),
-    CONSTRAINT trip_time_ck    CHECK (arrival_datetime IS NULL OR arrival_datetime > depa_datetime),
-    CONSTRAINT trip_route_fk   FOREIGN KEY (route_id)   REFERENCES route (rout_id),
-    CONSTRAINT trip_vehicle_fk FOREIGN KEY (vehicle_id) REFERENCES vehicle (vehicle_id),
-    CONSTRAINT trip_driver_fk  FOREIGN KEY (driver_id)  REFERENCES driver (employee_id)
+trip_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+base_price NUMBER(8,2) NOT NULL,
+depa_datetime TIMESTAMP NOT NULL,
+arrival_datetime TIMESTAMP,
+status VARCHAR2(20) DEFAULT 'Scheduled' CHECK (status IN ('Scheduled' , 'Completed' , 'Cancelled')),
+route_id NUMBER NOT NULL REFERENCES route(rout_id),
+vehicle_id NUMBER NOT NULL REFERENCES vehicle(vehicle_id),
+driver_id NUMBER NOT NULL REFERENCES driver(employee_id),
+CHECK (arrival_datetime IS NULL OR arrival_datetime > depa_datetime)
 );
 
 CREATE TABLE ticket (
-    ticket_id     NUMBER GENERATED ALWAYS AS IDENTITY,
-    price         NUMBER(8,2) NOT NULL,
-    seat_num      VARCHAR2(5) NOT NULL,
-    booking_date  DATE DEFAULT SYSDATE,
-    trip_id       NUMBER NOT NULL,
-    passenger_id  NUMBER NOT NULL,
-    CONSTRAINT ticket_pk           PRIMARY KEY (ticket_id),
-    CONSTRAINT ticket_seat_uk      UNIQUE (trip_id, seat_num),
-    CONSTRAINT ticket_trip_fk      FOREIGN KEY (trip_id)      REFERENCES trip (trip_id),
-    CONSTRAINT ticket_passenger_fk FOREIGN KEY (passenger_id) REFERENCES passenger (passenger_id)
+ticket_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+price NUMBER(8,2) NOT NULL,
+seat_num VARCHAR2(5) NOT NULL,
+booking_date DATE DEFAULT SYSDATE,
+trip_id NUMBER NOT NULL REFERENCES trip(trip_id),
+passenger_id NUMBER NOT NULL REFERENCES passenger(passenger_id),
+CONSTRAINT ticket_seat_uk UNIQUE (trip_id, seat_num)
 );
 
 CREATE TABLE payment (
-    payment_id  NUMBER GENERATED ALWAYS AS IDENTITY,
-    amount      NUMBER(8,2) NOT NULL,
-    pay_type    VARCHAR2(20) NOT NULL,
-    pay_date    DATE DEFAULT SYSDATE,
-    status      VARCHAR2(20) DEFAULT 'Paid',
-    ticket_id   NUMBER NOT NULL,
-    CONSTRAINT payment_pk        PRIMARY KEY (payment_id),
-    CONSTRAINT payment_ticket_uk UNIQUE (ticket_id),
-    CONSTRAINT payment_type_ck   CHECK (pay_type IN ('Cash', 'Card')),
-    CONSTRAINT payment_status_ck CHECK (status IN ('Paid', 'Pending', 'Refunded')),
-    CONSTRAINT payment_ticket_fk FOREIGN KEY (ticket_id) REFERENCES ticket (ticket_id)
+payment_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+amount NUMBER(8,2) NOT NULL,
+pay_type VARCHAR2(20) NOT NULL CHECK (pay_type IN ('Cash' , 'Card')),
+pay_date DATE DEFAULT SYSDATE,
+status VARCHAR2(20) DEFAULT 'Paid' CHECK (status IN ('Paid' , 'Pending' , 'Refunded')),
+ticket_id NUMBER NOT NULL UNIQUE REFERENCES ticket(ticket_id)
 );
 
 CREATE TABLE feedback (
-    feedback_id   NUMBER GENERATED ALWAYS AS IDENTITY,
-    submit_date   DATE DEFAULT SYSDATE,
-    rating        NUMBER(1) NOT NULL,
-    passenger_id  NUMBER NOT NULL,
-    trip_id       NUMBER NOT NULL,
-    CONSTRAINT feedback_pk           PRIMARY KEY (feedback_id),
-    CONSTRAINT feedback_rating_ck    CHECK (rating BETWEEN 1 AND 5),
-    CONSTRAINT feedback_passenger_fk FOREIGN KEY (passenger_id) REFERENCES passenger (passenger_id),
-    CONSTRAINT feedback_trip_fk      FOREIGN KEY (trip_id)      REFERENCES trip (trip_id)
+feedback_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+submit_date DATE DEFAULT SYSDATE,
+rating NUMBER(1) NOT NULL CHECK (rating BETWEEN 1 AND 5),
+passenger_id NUMBER NOT NULL REFERENCES passenger(passenger_id),
+trip_id NUMBER NOT NULL REFERENCES trip(trip_id)
 );
 
 CREATE TABLE maintenance (
-    main_id        NUMBER GENERATED ALWAYS AS IDENTITY,
-    cost           NUMBER(10,2),
-    repaired_date  DATE DEFAULT SYSDATE,
-    service_type   VARCHAR2(50),
-    employee_id    NUMBER NOT NULL,
-    vehicle_id     NUMBER NOT NULL,
-    CONSTRAINT maintenance_pk          PRIMARY KEY (main_id),
-    CONSTRAINT maintenance_mechanic_fk FOREIGN KEY (employee_id) REFERENCES mechanic (employee_id),
-    CONSTRAINT maintenance_vehicle_fk  FOREIGN KEY (vehicle_id)  REFERENCES vehicle (vehicle_id)
+main_id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+cost NUMBER(10,2),
+repaired_date DATE DEFAULT SYSDATE,
+service_type VARCHAR2(50),
+employee_id NUMBER NOT NULL REFERENCES mechanic(employee_id),
+vehicle_id NUMBER NOT NULL REFERENCES vehicle(vehicle_id)
 );
-
 
 -- ROUTE
 INSERT INTO route (origin, destination, distance_km) VALUES ('Colombo', 'Kandy', 115);
@@ -164,12 +135,12 @@ INSERT INTO vehicle (registration_num, vehicle_type, manu_year, model, status, c
 INSERT INTO vehicle (registration_num, vehicle_type, manu_year, model, status, capacity, fuel_type, ac_type, route_type) VALUES ('OX-9012', 'VAN', 2014, 'Toyota HiAce', 'Inactive', 14, 'Diesel', NULL, NULL);
 
 -- PASSENGER
-INSERT INTO passenger (first_name, last_name, email, password, registration_date) VALUES ('Nimal', 'Perera', 'nimal@gmail.com', 'nimal123', TO_DATE('2026-08-15', 'YYYY-MM-DD'));
-INSERT INTO passenger (first_name, last_name, email, password, registration_date) VALUES ('Kamal', 'Silva', 'kamal@gmail.com', 'kamal123', TO_DATE('2026-08-15', 'YYYY-MM-DD'));
-INSERT INTO passenger (first_name, last_name, email, password, registration_date) VALUES ('Saman', 'virahinha', 'saman@gmail.com', 'saman123', TO_DATE('2026-08-15', 'YYYY-MM-DD'));
+INSERT INTO passenger (first_name, last_name, email, password, registration_date) VALUES ('Nimal', 'Perera', 'nimal@gmail.com', 'nimal123', TO_DATE('2026-10-05', 'YYYY-MM-DD'));
+INSERT INTO passenger (first_name, last_name, email, password, registration_date) VALUES ('Kamal', 'Silva', 'kamal@gmail.com', 'kamal123', TO_DATE('2026-09-03', 'YYYY-MM-DD'));
+INSERT INTO passenger (first_name, last_name, email, password, registration_date) VALUES ('Saman', 'virahinha', 'saman@gmail.com', 'saman123', TO_DATE('2026-09-10', 'YYYY-MM-DD'));
 INSERT INTO passenger (first_name, last_name, email, password, registration_date) VALUES ('nimali', 'perera', 'nimali@gmail.com', 'nimali123', TO_DATE('2026-08-21', 'YYYY-MM-DD'));
-INSERT INTO passenger (first_name, last_name, email, password, registration_date) VALUES ('Ayesha', 'Fernando', 'ayesha@gmail.com', 'ayesha123', TO_DATE('2026-08-15', 'YYYY-MM-DD'));
-INSERT INTO passenger (first_name, last_name, email, password, registration_date) VALUES ('Ruwan', 'Jayasinha', 'ruwan@gmail.com', 'ruwan123', TO_DATE('2026-08-15', 'YYYY-MM-DD'));
+INSERT INTO passenger (first_name, last_name, email, password, registration_date) VALUES ('Ayesha', 'Fernando', 'ayesha@gmail.com', 'ayesha123', TO_DATE('2026-10-10', 'YYYY-MM-DD'));
+INSERT INTO passenger (first_name, last_name, email, password, registration_date) VALUES ('Ruwan', 'Jayasinha', 'ruwan@gmail.com', 'ruwan123', TO_DATE('2026-10-02', 'YYYY-MM-DD'));
 
 INSERT INTO passenger_contact (passenger_id, contact_number) VALUES (1, '0771234567');
 INSERT INTO passenger_contact (passenger_id, contact_number) VALUES (1, '0112345678');
@@ -180,13 +151,13 @@ INSERT INTO passenger_contact (passenger_id, contact_number) VALUES (5, '0778889
 INSERT INTO passenger_contact (passenger_id, contact_number) VALUES (5, '0114445566');
 INSERT INTO passenger_contact (passenger_id, contact_number) VALUES (6, '0752223344');
 
--- EMPLOYEE
+-- EMPLOYEE 
 INSERT INTO employee (first_name, last_name, emp_role, status, hire_date, email, password) VALUES ('Anura', 'Perera', 'ADMIN', 'Active', TO_DATE('2024-01-10', 'YYYY-MM-DD'), 'admin@gmail.com', 'admin123');
-INSERT INTO employee (first_name, last_name, emp_role, status, hire_date, email, password) VALUES ('Nuwan', 'Silva', 'DRIVER', 'Active', TO_DATE('2024-02-15', 'YYYY-MM-DD'), 'nuwan@gmail.com', 'nuwan123');
-INSERT INTO employee (first_name, last_name, emp_role, status, hire_date, email, password) VALUES ('Kamal', 'Perera', 'DRIVER', 'Active', TO_DATE('2024-03-01', 'YYYY-MM-DD'), 'kamalp@gmail.com', 'kamal123');
-INSERT INTO employee (first_name, last_name, emp_role, status, hire_date, email, password) VALUES ('Chaminda', 'Rathnayake', 'DRIVER', 'Active', TO_DATE('2024-06-12', 'YYYY-MM-DD'), 'chaminda@gmail.com', 'chamidna123');
-INSERT INTO employee (first_name, last_name, emp_role, status, hire_date, email, password) VALUES ('Prasad', 'Gunawardena', 'DRIVER', 'Active', TO_DATE('2025-01-20', 'YYYY-MM-DD'), 'prasad@gmail.com', 'prasad123');
-INSERT INTO employee (first_name, last_name, emp_role, status, hire_date, email, password) VALUES ('Saman', 'Kumara', 'MECHANIC', 'Active', TO_DATE('2024-05-20', 'YYYY-MM-DD'), 'saman@gmail.com', 'saman123');
+INSERT INTO employee (first_name, last_name, emp_role, status, hire_date, email, password) VALUES ('Nuwan', 'Silva', 'DRIVER', 'Active', TO_DATE('2024-02-15', 'YYYY-MM-DD'), 'driver@gmail.com', 'driver123');
+INSERT INTO employee (first_name, last_name, emp_role, status, hire_date, email, password) VALUES ('Kamal', 'Perera', 'DRIVER', 'Active', TO_DATE('2024-03-01', 'YYYY-MM-DD'), 'kamalp@gmail.com', 'driver123');
+INSERT INTO employee (first_name, last_name, emp_role, status, hire_date, email, password) VALUES ('Chaminda', 'Rathnayake', 'DRIVER', 'Active', TO_DATE('2024-06-12', 'YYYY-MM-DD'), 'chaminda@gmail.com', 'driver123');
+INSERT INTO employee (first_name, last_name, emp_role, status, hire_date, email, password) VALUES ('Prasad', 'Gunawardena', 'DRIVER', 'Active', TO_DATE('2025-01-20', 'YYYY-MM-DD'), 'prasad@gmail.com', 'driver123');
+INSERT INTO employee (first_name, last_name, emp_role, status, hire_date, email, password) VALUES ('Saman', 'Kumara', 'MECHANIC', 'Active', TO_DATE('2024-05-20', 'YYYY-MM-DD'), 'mechanic@gmail.com', 'mech123');
 INSERT INTO employee (first_name, last_name, emp_role, status, hire_date, email, password) VALUES ('Lasantha', 'Wickrama', 'MECHANIC', 'Active', TO_DATE('2025-03-05', 'YYYY-MM-DD'), 'lasantha@gmail.com', 'mech123');
 
 INSERT INTO driver (employee_id, license_num) VALUES (2, 'B1234567');
@@ -220,7 +191,7 @@ INSERT INTO trip (base_price, depa_datetime, arrival_datetime, status, route_id,
 INSERT INTO trip (base_price, depa_datetime, arrival_datetime, status, route_id, vehicle_id, driver_id) VALUES (1800, TO_DATE('2026-10-18 21:00', 'YYYY-MM-DD HH24:MI'), TO_DATE('2026-10-19 05:00', 'YYYY-MM-DD HH24:MI'), 'Scheduled', 4, 3, 3);
 INSERT INTO trip (base_price, depa_datetime, arrival_datetime, status, route_id, vehicle_id, driver_id) VALUES (350, TO_DATE('2026-10-16 10:00', 'YYYY-MM-DD HH24:MI'), TO_DATE('2026-10-16 12:30', 'YYYY-MM-DD HH24:MI'), 'Scheduled', 3, 4, 5);
 
--- TICKET
+-- TICKET  price, seat_num, booking_date, trip_id, passenger_id
 INSERT INTO ticket (price, seat_num, booking_date, trip_id, passenger_id) VALUES (450, '1A', TO_DATE('2026-09-01', 'YYYY-MM-DD'), 1, 1);
 INSERT INTO ticket (price, seat_num, booking_date, trip_id, passenger_id) VALUES (450, '1B', TO_DATE('2026-09-01', 'YYYY-MM-DD'), 1, 2);
 INSERT INTO ticket (price, seat_num, booking_date, trip_id, passenger_id) VALUES (450, '2A', TO_DATE('2026-09-02', 'YYYY-MM-DD'), 1, 3);
@@ -235,13 +206,14 @@ INSERT INTO ticket (price, seat_num, booking_date, trip_id, passenger_id) VALUES
 INSERT INTO ticket (price, seat_num, booking_date, trip_id, passenger_id) VALUES (350, '4D', TO_DATE('2026-09-21', 'YYYY-MM-DD'), 5, 5);
 INSERT INTO ticket (price, seat_num, booking_date, trip_id, passenger_id) VALUES (1800, '5A', TO_DATE('2026-09-22', 'YYYY-MM-DD'), 6, 2);
 
--- PAYMENT
+
+-- PAYMENT:
 INSERT INTO payment (amount, pay_type, pay_date, status, ticket_id)
 SELECT price, 'Card', booking_date, 'Paid', ticket_id FROM ticket WHERE ticket_id NOT IN (8, 10, 13);
 UPDATE payment SET pay_type = 'Cash' WHERE MOD(ticket_id, 3) = 0;
-UPDATE payment SET status = 'Refunded' WHERE ticket_id = 6;
+UPDATE payment SET status = 'Refunded' WHERE ticket_id = 6;   -- the cancelled trip
 
--- FEEDBACK
+-- FEEDBACK: (rating, passenger_id, trip_id)
 INSERT INTO feedback (rating, passenger_id, trip_id) VALUES (5, 1, 1);
 INSERT INTO feedback (rating, passenger_id, trip_id) VALUES (4, 2, 1);
 INSERT INTO feedback (rating, passenger_id, trip_id) VALUES (4, 3, 1);
@@ -254,9 +226,11 @@ INSERT INTO feedback (rating, passenger_id, trip_id) VALUES (4, 4, 4);
 INSERT INTO feedback (rating, passenger_id, trip_id) VALUES (5, 1, 5);
 INSERT INTO feedback (rating, passenger_id, trip_id) VALUES (3, 5, 5);
 INSERT INTO feedback (rating, passenger_id, trip_id) VALUES (5, 2, 6);
+INSERT INTO feedback (rating, passenger_id, trip_id) VALUES (4, 6, 6);
 INSERT INTO feedback (rating, passenger_id, trip_id) VALUES (5, 4, 7);
+INSERT INTO feedback (rating, passenger_id, trip_id) VALUES (4, 1, 7);
 
--- MAINTENANCE
+-- MAINTENANCE: (cost, repaired_date, service_type, mechanic employee_id, vehicle_id)
 INSERT INTO maintenance (cost, repaired_date, service_type, employee_id, vehicle_id) VALUES (8500, TO_DATE('2026-02-01', 'YYYY-MM-DD'), 'Engine Oil Change', 6, 1);
 INSERT INTO maintenance (cost, repaired_date, service_type, employee_id, vehicle_id) VALUES (12000, TO_DATE('2026-08-10', 'YYYY-MM-DD'), 'Brake Service', 7, 1);
 INSERT INTO maintenance (cost, repaired_date, service_type, employee_id, vehicle_id) VALUES (15500, TO_DATE('2026-03-12', 'YYYY-MM-DD'), 'Engine Repair', 6, 2);
@@ -269,17 +243,12 @@ INSERT INTO maintenance (cost, repaired_date, service_type, employee_id, vehicle
 
 COMMIT;
 
-DELETE FROM feedback WHERE trip_id = 7;
-COMMIT;
-
-INSERT INTO ticket (price, seat_num, booking_date, trip_id, passenger_id) VALUES (450, '1A', TO_DATE('2026-10-08', 'YYYY-MM-DD'), 9, 1);
-INSERT INTO ticket (price, seat_num, booking_date, trip_id, passenger_id) VALUES (450, '1B', TO_DATE('2026-10-08', 'YYYY-MM-DD'), 9, 2);
-INSERT INTO ticket (price, seat_num, booking_date, trip_id, passenger_id) VALUES (600, '3A', TO_DATE('2026-10-09', 'YYYY-MM-DD'), 10, 4);
-INSERT INTO ticket (price, seat_num, booking_date, trip_id, passenger_id) VALUES (1800, '1A', TO_DATE('2026-10-10', 'YYYY-MM-DD'), 11, 6);
+SELECT COUNT(*) FROM ticket
 
 
-INSERT INTO payment (amount, pay_type, pay_date, status, ticket_id)
-SELECT price, 'Card', booking_date, 'Paid', ticket_id FROM ticket WHERE trip_id = 9;
+ALTER TABLE ticket ADD CONSTRAINT ticket_seat_uk UNIQUE (trip_id, seat_num);
+UPDATE passenger SET registration_date = TO_DATE('2026-08-15', 'YYYY-MM-DD') WHERE passenger_id IN (1, 2, 3, 5, 6);
+DELETE FROM feedback WHERE (passenger_id, trip_id) IN ((6, 6), (4, 7), (1, 7));
 COMMIT;
 
 ---------------------------------------------------------------------------------------------------------------------
@@ -603,5 +572,10 @@ SELECT * FROM passenger;
 
 SELECT * FROM passenger_contact;
 
+DROP USER smartmove CASCADE;
+SELECT username, account_status FROM dba_users WHERE username = 'SMARTMOVE';
 
 
+CREATE USER smartmove IDENTIFIED BY 123;
+GRANT CONNECT, RESOURCE TO smartmove;
+ALTER USER smartmove QUOTA UNLIMITED ON USERS;
